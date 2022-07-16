@@ -2,7 +2,7 @@
 using YoutubeExplode.Videos.Streams;
 using YoutubeExplode.Converter;
 using System.Diagnostics;
-
+using System.Text.RegularExpressions;
 class GetVideo {
 
     static async Task Main() {
@@ -21,18 +21,12 @@ class GetVideo {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine(error.Message);
                 Console.ResetColor();
-                await Main();
+                await Continue();
             }
         }
         Process.Start("explorer", "downloads");
         Console.Clear();
-        Console.Write("Continue? (Y/N): ");
-        string? response = Console.ReadLine()?.ToUpper();
-        if (response == "Y") {
-            Console.Clear();
-            await Main();
-        }
-        Process.GetCurrentProcess().Kill();
+        await Continue();
     }
 
     static async Task CheckLink(string link, YoutubeClient youtube) {
@@ -55,9 +49,13 @@ class GetVideo {
     }
 
     static async Task GetQuality(List<string> qualitites, string name, StreamManifest streamManifest, YoutubeClient youtube) {
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine(name);
+        Console.ForegroundColor = ConsoleColor.Yellow;
         for (int count = 0; count < qualitites.Count; count++) {
             Console.WriteLine($"{count+1} - {qualitites[count]}");
         }
+        Console.ResetColor();
         Console.Write("Choose quality: ");
         int quality = Convert.ToInt32(Console.ReadLine());
         if (quality < 1 || quality > qualitites.Count) {
@@ -94,6 +92,16 @@ class GetVideo {
                 Console.CursorVisible = true;
             }
         });
-        await youtube.Videos.DownloadAsync(streamInfos, new ConversionRequestBuilder($@"downloads\{name}.mp4").Build(), progress);
+        await youtube.Videos.DownloadAsync(streamInfos, new ConversionRequestBuilder($@"downloads\{Regex.Replace(name, @"\W+", " ")}.mp4").Build(), progress);
+    }
+
+    static async Task Continue() {
+        Console.Write("Continue? (Y/N): ");
+        string? response = Console.ReadLine()?.ToUpper();
+        if (response == "Y") {
+            Console.Clear();
+            await Main();
+        }
+        Process.GetCurrentProcess().Kill();
     }
 }
